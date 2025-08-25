@@ -114,7 +114,7 @@ class SyncProcessModel:
     ) -> np.ndarray:
         """Вычисление значений константы C для дальнейших расчетов.
 
-        Индексация: k -> (k - 1)
+        Индексация: k -> (k - 1), h -> h
 
         Parameters:
         ----------
@@ -131,11 +131,12 @@ class SyncProcessModel:
 
         for k in range(self.K):
             curr_part = 1 + (self.v / (w * self.p[k, 0]))
-
-            for h in range(2, self.M - 1):
-                curr_part += ((self.v ** h) * mult_q[k, h]) / ((w ** h) * mult_p[h])
             
-            curr_part = curr_part + ((self.v ** self.M) * mult_q[k, self.M - 1]) / ((w ** (self.M)) * mult_p[self.M - 1]) / (1 - R[k])
+            for h in range(2, self.M):
+                curr_part += ((self.v ** h) * mult_q[k, h - 1]) / ((w ** h) * mult_p[k, h - 1])
+                
+            curr_part = curr_part + ((self.v ** self.M) * mult_q[k, self.M - 1]) / ((w ** (self.M)) * mult_p[k, self.M - 2]) / (1 - R[k])
+            
             constants[k] = 1 / curr_part
 
         return constants
@@ -150,7 +151,7 @@ class SyncProcessModel:
             : значения произведений q для дальнейшего расчета
         """
         q = self._compute_q()
-        mult_q = np.zeros((self.K), (self.M))
+        mult_q = np.zeros((self.K, self.M))
 
         for k in range(self.K):
             mult_q[k, 0] = q[k, 0]
@@ -187,7 +188,7 @@ class SyncProcessModel:
         -------
             : значения массива q для дальнейшего расчета.
         """
-        q = np.array((self.K, self.M))
+        q = np.zeros((self.K, self.M))
 
         for k in range(self.K):
             for h in range(self.M):
